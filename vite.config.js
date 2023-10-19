@@ -12,7 +12,7 @@ export default defineConfig(({ command, mode }) => {
             }
         },
         optimizeDeps: {
-            exclude: ['@babylonjs/havok'],
+            exclude: ['@babylonjs/havok', '@babylonjs/gui','@babylonjs/core'],
         }
     };
 });

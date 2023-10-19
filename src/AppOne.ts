@@ -1,144 +1,157 @@
-import * as BABYLON from 'babylonjs'
+import * as BABYLON from '@babylonjs/core';
 import HavokPhysics from "@babylonjs/havok";
+import "@babylonjs/core/Debug/debugLayer";
+import "@babylonjs/inspector";
+import * as GUI from '@babylonjs/gui/';
+import { AdvancedDynamicTexture, Button } from '@babylonjs/gui/2D';
+import Person from './gameObject/Person';
+import Ground from './gameObject/Ground';
 
 export class AppOne {
-    engine: BABYLON.Engine;
-    scene: BABYLON.Scene;
+  engine: BABYLON.Engine;
+  scene: BABYLON.Scene;
 
-    constructor(readonly canvas: HTMLCanvasElement) {
-        this.engine = new BABYLON.Engine(canvas)
-        window.addEventListener('resize', () => {
-            this.engine.resize();
-        });
-        this.scene = createScene(this.engine, this.canvas)
+  constructor(readonly canvas: HTMLCanvasElement) {
+    this.engine = new BABYLON.Engine(canvas)
+    window.addEventListener('resize', () => {
+      this.engine.resize();
+    });
 
+
+  }
+
+  debug(debugOn: boolean = true) {
+    if (debugOn) {
+      this.scene.debugLayer.show({ overlay: true, showExplorer: true });
+    } else {
+      this.scene.debugLayer.hide();
     }
+  }
 
-    debug(debugOn: boolean = true) {
-        if (debugOn) {
-            this.scene.debugLayer.show({ overlay: true });
-        } else {
-            this.scene.debugLayer.hide();
-        }
-    }
-
-    run() {
-        this.debug(true);
-        this.engine.runRenderLoop(() => {
-            this.scene.render();
-        });
-    }
+  async run() {
+    this.scene = await createScene(this.engine, this.canvas)
+    this.debug(true);
+    this.engine.runRenderLoop(() => {
+      this.scene.render();
+    });
+  }
 
 }
 
+let createScene = async function (engine: BABYLON.Engine, canvas: HTMLCanvasElement) {
+  // this is the default code from the playground:
+  // This creates a basic Babylon Scene object (non-mesh)
 
-let createScene = function (engine: BABYLON.Engine, canvas: HTMLCanvasElement) {
-    // this is the default code from the playground:
+  let size = 5
+  let scene = new BABYLON.Scene(engine);
+ 
+  new BABYLON.AxesViewer(scene, 5);
 
-    // This creates a basic Babylon Scene object (non-mesh)
-    let scene = new BABYLON.Scene(engine);
+  let havokInstance = await HavokPhysics()
+  const havokPlugin = new BABYLON.HavokPlugin(true, havokInstance);
+  scene.enablePhysics(new BABYLON.Vector3(0, -9.8, 0), havokPlugin);
+  scene.collisionsEnabled = true;
+  // This creates and positions a free camera (non-mesh)
+  let camera = new BABYLON.ArcRotateCamera("camera1",0, 0, 80, BABYLON.Vector3.Zero(), scene);
+  const ratio = scene.getEngine().getAspectRatio(camera)
+  camera.mode = BABYLON.ArcRotateCamera.ORTHOGRAPHIC_CAMERA;
+  camera.orthoTop = size+2;
+  camera.orthoBottom = -size-2;
+  camera.orthoLeft = (-size-2) * ratio;
+  camera.orthoRight = (size+2) * ratio;
 
-    // This creates and positions a free camera (non-mesh)
-    let camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 10, -10), scene);
+  // This targets the camera to scene origin
+  camera.setTarget(BABYLON.Vector3.Zero());
 
-    // This targets the camera to scene origin
-    camera.setTarget(BABYLON.Vector3.Zero());
+  //camera.attachControl(canvas, true);
+  // This attaches the camera to the canvas
 
-    // This attaches the camera to the canvas
-    camera.attachControl(canvas, true);
+  // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+  let light = new BABYLON.DirectionalLight("light", new BABYLON.Vector3(0, -1, 0), scene);
 
-    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-    let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+  // Default intensity is 1. Let's dim the light a small amount
+  light.intensity = 0.8;
 
-    // Default intensity is 1. Let's dim the light a small amount
-    light.intensity = 0.7;
+  var redMat = new BABYLON.StandardMaterial("redMat", scene,);
+	redMat.emissiveColor = new BABYLON.Color3(1, 0, 0);
+	
+	var blueMat = new BABYLON.StandardMaterial("blueMat", scene);
+	blueMat.emissiveColor = new BABYLON.Color3(0, 0, 1);
+	
+  console.log(sizetoMax(size, ratio))
 
-    // Our built-in 'sphere' shape.
-    
-    let man = BABYLON.MeshBuilder.CreateBox('man', {
-        height: 2,
-        width: 1,
-        depth: 1,
-        bottomBaseAt: 2
-    }, scene);
-    man.position = new BABYLON.Vector3(3, 1, 0)
+  const newPerson = new Person(scene, blueMat,  new BABYLON.Vector3(5,1,5), sizetoMax(size, ratio));
+  new Ground(scene)
 
-
-    let man2 = BABYLON.MeshBuilder.CreateBox('man2', {
-        height: 2,
-        width: 1,
-        depth: 1,
-        bottomBaseAt: 2
-    }, scene);
-    man2.position = new BABYLON.Vector3(0, 1, 3)
-
-
-    let ball = BABYLON.CreateSphereVertexData({
-        diameter: 0.5
-    })
-    let ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
-    let click = false;
-    let id: AbstractMesh = null
-    let tempball: AbstractMesh = null
-    scene.onPointerDown = ((evt , info) => {
-
-        if(info.hit) {
+  const foe = new Person(scene, redMat, new BABYLON.Vector3(2,1,2), sizetoMax(size, ratio));
 
 
-            if(info.pickedMesh.id !== 'ground') {
-                let snowball = new BABYLON.Mesh("snowball");
-                const pos = info.pickedMesh.position.clone();
-                pos.y = pos.y + 1;
-                pos.x = pos.x + 1;
-                snowball.position = pos;
-                ball.applyToMesh(snowball)
-                id = info.pickedMesh
-                tempball = snowball
-                click = true;
-            }
-        }
-    })
+  let click = false;
+  scene.onPointerDown = ((evt, info) => {
 
-    scene.onPointerMove = ((evt, info) => {
-        if(click) {
-            // console.log(scene.pointerX, scene.pointerY)
-            // let pickInfo = scene.pick(scene.pointerX, scene.pointerY, (mesh) => mesh === ground);
-            // console.log(pickInfo)
-            // if ( pickInfo.pickedPoint) {
-            //     const pos = pickInfo.pickedPoint
-            //     id.position = pos
-            // }
+    if (info.hit) {
+      newPerson.createBall()
+      click = true;
+    }
+  })
 
+  scene.onPointerUp = ((evt, info) => {
+    click = false;
+    newPerson.throwBall();
+  })
 
-        }
-    })
+  scene.onKeyboardObservable.add((kbInfo: BABYLON.KeyboardInfo) => {
+    if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN) {
+      if (kbInfo.event.key === 'w' || kbInfo.event.key === 'a' || kbInfo.event.key === 's' || kbInfo.event.key === 'd') {
+        newPerson.addMoveDirection(kbInfo.event.key)
+      }
+    }
+    if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYUP) {
+      if (kbInfo.event.key === 'w' || kbInfo.event.key === 'a' || kbInfo.event.key === 's' || kbInfo.event.key === 'd') {
+        newPerson.removeMove(kbInfo.event.key)
+      }
+    }
+  })
 
-    scene.onPointerUp = ((evt, info) => {
-        click = false;
-        new BABYLON.PhysicsAggregate(tempball, BABYLON.PhysicsShapeType.SPHERE, { mass: 1, restitution:0.75}, scene)
-        let temp = new BABYLON.PhysicsBody(tempball, BABYLON.PhysicsMotionType.DYNAMIC, false, scene)
-        let shape = new BABYLON.PhysicsShapeSphere( 
-            tempball.position,
-         1,
-        scene)
-        temp.shape = shape
-        temp.setMassProperties({
-            mass: 10,
-          });
-          tempball.physicsBody.applyForce(new BABYLON.Vector3(0, 1, 0), new BABYLON.Vector3(0, 0, 0));
+  scene.onPointerMove = (evt, pickResult) => {
+		if (pickResult.hit) {
+			newPerson.setLookPos(pickResult.pickedPoint);
+		}
+  }
 
-    })
-    let havokInstance;
-
-    HavokPhysics().then((havok) => {
-        // Havok is now available
-        havokInstance = havok;
-        const havokPlugin = new BABYLON.HavokPlugin(true, havokInstance);
-        // enable physics in the scene with a gravity
-        scene.enablePhysics(new BABYLON.Vector3(0, -9.8, 0), havokPlugin);
-        var groundAggregate = new BABYLON.PhysicsAggregate(ground, BABYLON.PhysicsShapeType.BOX, { mass: 0 }, scene);
-      });
+  
 
 
-    return scene;
+  // var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
+
+  // var button1 = GUI.Button.CreateSimpleButton("but1", "Click Me");
+  // button1.width = "150px"
+  // button1.height = "40px";
+  // button1.color = "white";
+  // button1.cornerRadius = 20;
+  // button1.background = "green";
+  // button1.onPointerUpObservable.add(function() {
+  //     alert("you did it!");
+  // });
+  // advancedTexture.addControl(button1);    
+
+
+  return scene;
 };
+
+
+interface GroundLimit {
+  maxX: number;
+  minX: number;
+  maxZ: number;
+  minZ: number;
+}
+
+function sizetoMax(size: number, ratio: number): GroundLimit {
+  return {
+    maxX: size,
+    minX: -size,
+    maxZ: size * ratio,
+    minZ: -size * ratio
+  }
+}
