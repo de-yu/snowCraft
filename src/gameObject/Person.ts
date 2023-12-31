@@ -1,7 +1,7 @@
 import * as BABYLON from '@babylonjs/core';
 import Ball from './Ball';
 import * as GUI from '@babylonjs/gui/';
-
+import arrow from '../../public/arrow.png'
 
 interface GroundLimit {
   maxX: number;
@@ -141,7 +141,7 @@ class Person {
     this.arrow.position = startPos.add( this.person.forward);
     this.arrow.position.y = 0.1;
     this.arrowMat = new BABYLON.StandardMaterial("mat", this.scene);
-    this.arrowMat.diffuseTexture = new BABYLON.Texture("public/arrow.png", this.scene);;
+    this.arrowMat.diffuseTexture = new BABYLON.Texture(arrow, this.scene);;
     this.arrow.material = this.arrowMat
   }
 
