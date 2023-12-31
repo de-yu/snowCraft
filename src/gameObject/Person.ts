@@ -1,5 +1,6 @@
 import * as BABYLON from '@babylonjs/core';
 import Ball from './Ball';
+import * as GUI from '@babylonjs/gui/';
 
 
 interface GroundLimit {
@@ -17,6 +18,7 @@ const moveValue = {
 }
 
 const moveDirection = ['w', 'a', 's', 'd'];
+type Direction =  'w' | 's' | 'a' | 'd';
 
 class Person {
 
@@ -31,13 +33,17 @@ class Person {
   live: number;
   ball: Ball[];
   lastBallDispose: boolean;
+  firstThrow: boolean;
   limit: GroundLimit
-  moveArr: string[];
+  moveArr: Direction[];
   lookAtPos: BABYLON.Vector3;
-  strength: boolean;
-  newStrength: number
+  isControl: boolean;
+  isUserControl: boolean;
+  dead: boolean;
+  text!: GUI.TextBlock;
 
-  constructor (scene: BABYLON.Scene, material: BABYLON.StandardMaterial, startPos: BABYLON.Vector3 = new BABYLON.Vector3(0, 1, 0), limit:  GroundLimit) {
+  constructor (scene: BABYLON.Scene, material: BABYLON.StandardMaterial, startPos: BABYLON.Vector3 = new BABYLON.Vector3(0, 1, 0), limit:  GroundLimit,
+   isControl: boolean, isUserControl: boolean) {
 
     this.scene = scene;
     this.createPerson(material, startPos);
@@ -47,25 +53,71 @@ class Person {
     this.power = 2;
     this.limit = limit;
     this.moveArr = [];
+    this.isControl = isControl;
+    this.isUserControl = isUserControl;
+    this.dead = false;
 
     this.scene.onBeforeRenderObservable.add(() => {
-      this.person.position = BABYLON.Vector3.Lerp(this.person.position.clone(), this.personNewPos, 0.02);
-      if(!this.lastBallDispose) {
-        this.ball[this.ball.length -1].setPosition(this.person.position.add(this.person.forward))
+      if(this.isControl) {
+        this.person.position = BABYLON.Vector3.Lerp(this.person.position.clone(), this.personNewPos, 0.02);
+        if(!this.lastBallDispose) {
+          this.ball[this.ball.length -1].setPosition(this.person.position.add(this.person.forward))
+        }
       }
-      this.arrow.scaling.z = this.newStrength
     });
+    
     this.scene.registerBeforeRender(() => {
-      this.move()
-      this.addPower()
+      if(this.isControl) {
+        this.move()
+      }
     });
 
-    this.setObservable()
+    if(this.isUserControl) {
+      this.setControl();
+      this.showLife();
+    }
+    this.setObservable();
     this.lookAtPos = new BABYLON.Vector3(0, 0 , 0);
     this.ball = [];
     this.lastBallDispose = true;
-    this.strength = false
-    this.newStrength = 1
+    this.firstThrow = true;
+
+  }
+
+
+  setControl() {
+    let click = false;
+    this.scene.onPointerDown = ((evt, info) => {
+  
+      if (info.hit) {
+        this.createBall()
+        click = true;
+      }
+    })
+  
+    this.scene.onPointerUp = ((evt, info) => {
+      click = false;
+      this.throwBall();
+    })
+
+    this.scene.onKeyboardObservable.add((kbInfo: BABYLON.KeyboardInfo) => {
+      if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN) {
+        if (kbInfo.event.key === 'w' || kbInfo.event.key === 'a' || kbInfo.event.key === 's' || kbInfo.event.key === 'd') {
+          this.addMoveDirection(kbInfo.event.key)
+        }
+      }
+      if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYUP) {
+        if (kbInfo.event.key === 'w' || kbInfo.event.key === 'a' || kbInfo.event.key === 's' || kbInfo.event.key === 'd') {
+          this.removeMove(kbInfo.event.key)
+        }
+      }
+    })
+
+    this.scene.onPointerMove = (evt, pickResult) => {
+      if (pickResult.hit && pickResult.pickedPoint) {
+        this.setLookPos(pickResult.pickedPoint);
+      }
+    }
   }
 
   createPerson( material: BABYLON.StandardMaterial, startPos: BABYLON.Vector3) {
@@ -78,10 +130,10 @@ class Person {
     this.person.position = startPos;
     this.personNewPos = startPos;
     this.person.checkCollisions = true;
-    this.personPhysics = new BABYLON.PhysicsAggregate(this.person, BABYLON.PhysicsShapeType.BOX, { mass: 20, friction:5, mesh:this.person  }, this.scene);
+    this.personPhysics = new BABYLON.PhysicsAggregate(this.person, BABYLON.PhysicsShapeType.BOX, { mass: 100, friction:5, mesh:this.person  }, this.scene);
     this.personPhysics.body.disablePreStep = false;
     this.personPhysics.body.setCollisionCallbackEnabled(true)
-    this.personPhysics.body.setMotionType(BABYLON.PhysicsMotionType.STATIC);
+    this.personPhysics.body.setMotionType(BABYLON.PhysicsMotionType.DYNAMIC);
   }
 
   createArrow(startPos: BABYLON.Vector3) {
@@ -99,10 +151,12 @@ class Person {
     observable.add((collisionEvent) => {
       if(collisionEvent.collidedAgainst.transformNode.name === 'snowball') {
         collisionEvent.collidedAgainst.transformNode.dispose()
-        this.live = this.live - 50
+        this.changeLife(-25)
       }
+      
       // if(this.live <= 0) {
       //   this.person.dispose();
+      //   this.arrow.dispose();
       // }
     });
   }
@@ -121,14 +175,14 @@ class Person {
     this.arrow.position.y = 0.1
   } 
 
-  removeMove (direction: 'w' | 's' | 'a' | 'd') {
+  removeMove (direction: Direction) {
     const index = this.moveArr.indexOf(direction);
     if (index > -1) { // only splice array when item is found
       this.moveArr.splice(index, 1); // 2nd parameter means remove one item only
     }
   }
 
-  addMoveDirection(direction: 'w' | 's' | 'a' | 'd') {
+  addMoveDirection(direction: Direction) {
     for(const temp of moveDirection) {
       if(temp === direction) {
         if(!this.moveArr.includes(direction)) {
@@ -137,6 +191,11 @@ class Person {
       }
     }
   }
+  
+  setDirection(directions: Direction[]) {
+    this.moveArr = directions
+  }
+  
   move () {
 
     let move = this.person.position
@@ -162,28 +221,57 @@ class Person {
     if(this.lastBallDispose) {
       this.ball.push(new Ball(this.scene, () => {
         this.lastBallDispose = true;
-        this.strength = false
+        this.firstThrow = true;
       }))
       this.ball[this.ball.length - 1].setPosition(this.person.position.clone().add(this.person.forward).clone());
       this.lastBallDispose = false;
-      this.strength = true
     }
-  }
-
-  addPower() {
-    if(this.strength) {
-      this.newStrength += 0.05
-      this.newStrength = Math.min(this.newStrength, 3)
-    } else {
-      this.newStrength -= 0.05
-      this.newStrength = Math.max(this.newStrength, 1)
-    }
-
   }
 
   throwBall () {
-    this.ball[this.ball.length - 1].addImpuse(this.person.forward.multiply(
-      new BABYLON.Vector3(3, 0 ,3)), this.person.position);
+    if(this.firstThrow) {
+      this.ball[this.ball.length - 1].addImpuse(this.person.forward.multiply(
+        new BABYLON.Vector3(3, 0 ,3)), this.person.position);
+      this.firstThrow = false;
+    }
+    
+  }
+
+  showLife() {
+    let advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
+    
+    this.text = new GUI.TextBlock('life', `生命值: ${this.live.toString()}`);
+    this.text.topInPixels = 600;
+    this.text.leftInPixels = 100;
+    this.text.fontSize = '36px';
+    this.text.color = '#0f0'
+    advancedTexture.addControl(this.text)
+
+  }
+  changeLife (value: number) {
+    this.live = this.live + value
+    if(this.isUserControl) {
+      this.text.text = `生命值: ${this.live.toString()}`;
+    }
+  }
+
+  get position() {
+    return this.person.position;
+  }
+  get rotationY() {
+    if(this.personPhysics.transformNode.rotationQuaternion) {
+      return this.personPhysics.transformNode.rotationQuaternion?.toEulerAngles().y * 180 / Math.PI;
+    }
+    return 0
+  }
+
+  deletePerson() {
+    this.person.dispose();
+    this.arrow.dispose();
+  }
+
+  get isDead() {
+    return this.dead;
   }
 }
 

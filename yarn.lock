@@ -17,10 +17,10 @@
   resolved "https://registry.npmjs.org/@babylonjs/gui/-/gui-6.9.0.tgz"
   integrity sha512-RcVorxsj6n2EbwkBJYPBqF88Rybd3OHbx55runbMSehb9rKhc6d2QIiXTi7yI2oBNyuQBsDxx+ky58Rur2UXww==
 
-"@babylonjs/havok@^1.0.1":
-  version "1.1.4"
-  resolved "https://registry.npmjs.org/@babylonjs/havok/-/havok-1.1.4.tgz"
-  integrity sha512-mK/sgqv4LaI4BjoQgWYGxOBX45hVauZ8PopPkIUIB42DiVPgWkiCZbBQ9pL7r1tbLhThvV1RTokj4z5bVGBayw==
+"@babylonjs/havok@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.npmjs.org/@babylonjs/havok/-/havok-1.3.0.tgz"
+  integrity sha512-mnSe/0A+JJ1vVjDOd1MkysLOW6WB96n3+ALiGTTXzhDLRfMEjG7P8+qC9SL+TSWj2HgaiDzpwsMDZjqLBDIdWw==
   dependencies:
     "@types/emscripten" "^1.39.6"
 
@@ -80,9 +80,9 @@
     "@fortawesome/fontawesome-common-types" "6.4.2"
 
 "@types/emscripten@^1.39.6":
-  version "1.39.7"
-  resolved "https://registry.npmjs.org/@types/emscripten/-/emscripten-1.39.7.tgz"
-  integrity sha512-tLqYV94vuqDrXh515F/FOGtBcRMTPGvVV1LzLbtYDcQmmhtpf/gLYf+hikBbQk8MzOHNz37wpFfJbYAuSn8HqA==
+  version "1.39.10"
+  resolved "https://registry.npmjs.org/@types/emscripten/-/emscripten-1.39.10.tgz"
+  integrity sha512-TB/6hBkYQJxsZHSqyeuO1Jt0AB/bW6G7rHt9g7lML7SOF6lbgcHvw/Lr+69iqN0qxgXLhWKScAon73JNnptuDw==
 
 "@types/lodash@^4.14.200":
   version "4.14.200"

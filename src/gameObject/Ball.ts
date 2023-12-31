@@ -17,11 +17,11 @@ class Ball {
       diameter: 0.5
     }, scene);
     this.status = 'start'
-    console.log('ball con')
     this.snowBallPhysics = new BABYLON.PhysicsAggregate(this.snowBall, BABYLON.PhysicsShapeType.SPHERE, { mass: 2, friction:5  }, scene)
     this.snowBallPhysics.body.disablePreStep = false;
     this.snowBallPhysics.body.setCollisionCallbackEnabled(true)
     this.snowBallPhysics.body.setMotionType(BABYLON.PhysicsMotionType.STATIC);
+
     this.snowBall.onDispose = () => {
       disposeCallback();
     }
