@@ -49,3 +49,5 @@ Thank you for using it, feel free to contribute in any way you can/want, just ke
 If you'd like to add complexity just fork it and let me know when you're done, so that I might reference it here in case someone comes looking for a more opinionated environment.
 
 Enjoy!
+
+https://de-yu.github.io/snowCraft/dist/
