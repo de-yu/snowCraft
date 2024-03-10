@@ -36,14 +36,14 @@ class Ball {
     this.snowBall.setEnabled(enabled);
   }
 
-  addPower() {
-
-  }
-
   addImpuse(power: BABYLON.Vector3, personPos: BABYLON.Vector3) {
     this.snowBallPhysics.body.setMotionType(BABYLON.PhysicsMotionType.DYNAMIC);
     this.snowBallPhysics.body.applyImpulse(power.multiply(new BABYLON.Vector3(this.power, 0 , this.power)), personPos);
     this.status = 'throw';
+  }
+
+  dispose() {
+    this.snowBall.dispose();
   }
 }
 

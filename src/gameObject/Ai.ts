@@ -13,14 +13,32 @@ class Ai {
   enemy: Person[];
   nearestIndex: number;
   scene: BABYLON.Scene;
-
+  shootId: number;
+  shootTimeOut: number
   constructor(person: Person, enemy: Person[], scene: BABYLON.Scene) {
     this.person = person;
     this.enemy = enemy;
     this.scene = scene
     this.nearestIndex = 0
 
-    this.scene.registerBeforeRender(() => {
+    this.scene.registerBeforeRender(this.aiOperation());
+    this.shootTimeOut = 0;
+    this.shootId = setInterval(() => {
+      // if(this.isInRange()){
+      //   this.shoot();
+      // }
+      this.shootTimeOut = setTimeout(() => {
+        if(this.isInRange()){
+          this.shoot();
+        }
+      }, random(500,1500))
+
+
+    }, 1000)
+  }
+
+  aiOperation()  {
+    return () => {
       this.nearestEnemy();
       this.lookTarget()
       if(!this.isInRange()) {
@@ -29,31 +47,36 @@ class Ai {
       } else {
         this.stop();
       }
-    });
 
-    setInterval(() => {
-      // if(this.isInRange()){
-      //   this.shoot();
-      // }
-      setTimeout(() => {
-        if(this.isInRange()){
-          this.shoot();
-        }
-      }, random(500,1500))
-    }, 1000)
+      if(this.person.isDead) {
+        this.closeAi();
+      }
+
+    }
+  }
+
+  closeAi() {
+    this.scene.unregisterBeforeRender(this.aiOperation)
+    clearInterval(this.shootId)
+    clearTimeout(this.shootTimeOut)
   }
 
   nearestEnemy() {
     let distance = 100;
-    let index = 0;
+    let index = -1;
     for(let i=0;i<this.enemy.length;i++) {
       const newDistance = BABYLON.Vector3.Distance(this.person.position, this.enemy[i].position);
-      if(newDistance < distance) {
+      if(newDistance < distance && !this.enemy[i].isDead) {
         distance = newDistance;
         index = i
       }
     }
-    this.nearestIndex = index;
+
+    if(index === -1) {
+      this.closeAi();
+    } else {
+      this.nearestIndex = index;
+    }
   }
 
   lookTarget() {

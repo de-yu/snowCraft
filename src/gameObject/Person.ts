@@ -17,8 +17,9 @@ const moveValue = {
   'd': new BABYLON.Vector3(0,0,1),
 }
 
-const moveDirection = ['w', 'a', 's', 'd'];
+
 type Direction =  'w' | 's' | 'a' | 'd';
+const moveDirection: Array<Direction> = ['w', 'a', 's', 'd'];
 
 class Person {
 
@@ -57,20 +58,7 @@ class Person {
     this.isUserControl = isUserControl;
     this.dead = false;
 
-    this.scene.onBeforeRenderObservable.add(() => {
-      if(this.isControl) {
-        this.person.position = BABYLON.Vector3.Lerp(this.person.position.clone(), this.personNewPos, 0.02);
-        if(!this.lastBallDispose) {
-          this.ball[this.ball.length -1].setPosition(this.person.position.add(this.person.forward))
-        }
-      }
-    });
-    
-    this.scene.registerBeforeRender(() => {
-      if(this.isControl) {
-        this.move()
-      }
-    });
+    this.scene.registerBeforeRender(this.renderOperation());
 
     if(this.isUserControl) {
       this.setControl();
@@ -84,6 +72,18 @@ class Person {
 
   }
 
+  renderOperation(){
+    return () => { 
+      if(this.isControl) {
+        this.person.position = BABYLON.Vector3.Lerp(this.person.position.clone(), this.personNewPos, 0.02);
+        if(!this.lastBallDispose) {
+          this.ball[this.ball.length -1].setPosition(this.person.position.add(this.person.forward))
+        }
+        this.move()
+      }
+    }
+  }
+
 
   setControl() {
     let click = false;
@@ -94,6 +94,7 @@ class Person {
         click = true;
       }
     })
+
   
     this.scene.onPointerUp = ((evt, info) => {
       click = false;
@@ -102,13 +103,13 @@ class Person {
 
     this.scene.onKeyboardObservable.add((kbInfo: BABYLON.KeyboardInfo) => {
       if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN) {
-        if (kbInfo.event.key === 'w' || kbInfo.event.key === 'a' || kbInfo.event.key === 's' || kbInfo.event.key === 'd') {
-          this.addMoveDirection(kbInfo.event.key)
+        if (moveDirection.includes(kbInfo.event.key.toLocaleLowerCase() as Direction)) {
+          this.addMoveDirection(kbInfo.event.key.toLocaleLowerCase()  as Direction)
         }
       }
       if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYUP) {
-        if (kbInfo.event.key === 'w' || kbInfo.event.key === 'a' || kbInfo.event.key === 's' || kbInfo.event.key === 'd') {
-          this.removeMove(kbInfo.event.key)
+        if  (moveDirection.includes(kbInfo.event.key.toLocaleLowerCase() as Direction)) {
+          this.removeMove(kbInfo.event.key as Direction)
         }
       }
     })
@@ -154,10 +155,14 @@ class Person {
         this.changeLife(-25)
       }
       
-      // if(this.live <= 0) {
-      //   this.person.dispose();
-      //   this.arrow.dispose();
-      // }
+      if(this.live <= 0) {
+        this.deletePerson();
+        this.scene.unregisterBeforeRender(this.renderOperation);
+        if(this.isUserControl) {
+          this.scene.onPointerDown = undefined;
+          this.scene.onPointerUp = undefined;
+        }
+      }
     });
   }
 
@@ -268,6 +273,10 @@ class Person {
   deletePerson() {
     this.person.dispose();
     this.arrow.dispose();
+    if(this.ball.length > 0) {
+      this.ball[this.ball.length - 1].dispose();
+    }
+    this.dead = true;
   }
 
   get isDead() {

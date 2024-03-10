@@ -116,21 +116,6 @@ export class AppOne {
       new Ai(enemies[i], teammates.concat(newPerson), this.scene);
     }
 
-    for(let i=0; i<teammates.length;i++) {
-      if(teammates[i] !== null) {
-        if(teammates[i].isDead){
-          delete teammates[i];
-        }
-      }
-    }
-
-    for(let i=0; i<enemies.length;i++) {
-      if(enemies[i] !== null) {
-        if(enemies[i].isDead){
-          delete enemies[i];
-        }
-      }
-    }
   }
   createTestGame() {
     let blueMat = new BABYLON.StandardMaterial("blueMat", this.scene);
@@ -169,7 +154,8 @@ export class AppOne {
     button1.onPointerUpObservable.add(() => {
       this.start = true;
       advancedTexture.removeControl(button1);
-      advancedTexture.removeControl(button2); 
+      advancedTexture.removeControl(button2);
+      advancedTexture.removeControl(button3);
       advancedTexture.removeControl(text);
       this.createGame();
     });
@@ -184,11 +170,55 @@ export class AppOne {
       this.start = true;
       advancedTexture.removeControl(button1);
       advancedTexture.removeControl(button2);
+      advancedTexture.removeControl(button3);
       advancedTexture.removeControl(text);
       this.createTestGame();
     });
+
+
+    let textblock = new GUI.TextBlock('keyboard')
+    textblock.text = "UP: W\n\nLeft: A\n\nDown: S\n\nRight: D\n\nRight Mouse Button: Shoot";
+    textblock.fontSize = 24;
+    textblock.textHorizontalAlignment = 0;
+    textblock.color = "white";
+    textblock.width = '400px';
+    textblock.height = '400px';
+
+    let background = new GUI.Rectangle();
+    background.width = '500px';
+    background.height = '500px';
+    background.background = '#aaa';
+
+    let button3 = GUI.Button.CreateSimpleButton("but3", "KeyBoard Control");
+    button3.width = "170px";
+    button3.height = "40px";
+    button3.color = "white";
+    button3.cornerRadius = 20;
+    button3.background = "green";
+    button3.top = '200px';
+    button3.onPointerUpObservable.add(() => {
+      advancedTexture.addControl(background);
+      advancedTexture.addControl(textblock);
+      advancedTexture.addControl(button4);
+    });
+
+    let button4 = GUI.Button.CreateSimpleButton("button4", "close");
+    button4.width = "150px";
+    button4.height = "40px";
+    button4.color = "white";
+    button4.cornerRadius = 20;
+    button4.background = "green";
+    button4.top = '170px';
+    button4.onPointerUpObservable.add(() => {
+      advancedTexture.removeControl(background)
+      advancedTexture.removeControl(textblock);
+      advancedTexture.removeControl(button4);
+    });
+
+
     advancedTexture.addControl(button1);
     advancedTexture.addControl(button2); 
+    advancedTexture.addControl(button3);
   }
   
 }
