@@ -246,7 +246,7 @@ class Person {
     let advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
     
     this.text = new GUI.TextBlock('life', `生命值: ${this.live.toString()}`);
-    this.text.topInPixels = 600;
+    this.text.topInPixels = 520;
     this.text.leftInPixels = 100;
     this.text.fontSize = '36px';
     this.text.color = '#0f0'
